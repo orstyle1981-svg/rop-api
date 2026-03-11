@@ -1,9 +1,11 @@
-import re  # <--- Этой строки не хватало
+import re
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # добавлено для CORS
 import json
 import os
 
 app = Flask(__name__)
+CORS(app)  # разрешаем запросы с любых доменов
 
 # Загружаем базу кодов при старте
 with open(os.path.join(os.path.dirname(__file__), 'rop_codes.json'), 'r', encoding='utf-8') as f:
