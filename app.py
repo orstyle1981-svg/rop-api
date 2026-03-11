@@ -1,3 +1,4 @@
+import re  # <--- Этой строки не хватало
 from flask import Flask, request, jsonify
 import json
 import os
@@ -15,7 +16,7 @@ def normalize_code(code, code_type):
 @app.route('/check', methods=['GET'])
 def check_code():
     code = request.args.get('code', '').strip()
-    code_type = request.args.get('type', '').strip().lower()  # 'tnved' или 'okpd2'
+    code_type = request.args.get('type', '').strip().lower()
 
     if not code or not code_type:
         return jsonify({'error': 'Missing code or type parameter'}), 400
@@ -23,23 +24,16 @@ def check_code():
     if code_type not in ('tnved', 'okpd2'):
         return jsonify({'error': 'Type must be "tnved" or "okpd2"'}), 400
 
-    # Поиск по точному совпадению
     found = []
     for item in data:
         db_code = item.get(f'{code_type}_code')
         if db_code:
-            # Убираем префикс 'из' для ТН ВЭД
             if code_type == 'tnved' and db_code.startswith('из '):
                 db_code = db_code[3:].strip()
             if db_code == code:
                 found.append(item)
 
     if not found:
-        # Если не нашли, пробуем частичное совпадение (первые N знаков)
-        # Для ТН ВЭД: сначала 10 знаков, потом 6, потом 4
-        # Для ОКПД2: сначала 9 знаков, потом 6, потом 4 (но у нас 9-значные)
-        # Упрощённо: отсекаем последние символы и ищем любой код, начинающийся с этого префикса
-        # Реализуем базовый алгоритм
         normalized = normalize_code(code, code_type)
         for item in data:
             db_code = item.get(f'{code_type}_code')
@@ -52,9 +46,7 @@ def check_code():
                 if db_norm and normalized.startswith(db_norm):
                     found.append(item)
 
-    # Если нашли, формируем ответ
     if found:
-        # Берём первую запись (можно уточнить)
         first = found[0]
         group = first.get('group')
         group_name = first.get('group_name')
